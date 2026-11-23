@@ -15,7 +15,7 @@ dist
 decks/*
 !decks/example_deck.md
 
-# AI agent context
+# Ignore
 
-CLAUDE.md
-AGENTS.md
+*__delete__*
+*__DELETE__*
