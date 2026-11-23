@@ -14,8 +14,3 @@ dist
 
 decks/*
 !decks/example_deck.md
-
-# Ignore
-
-*__delete__*
-*__DELETE__*
