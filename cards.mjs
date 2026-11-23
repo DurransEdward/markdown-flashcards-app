@@ -5,7 +5,7 @@ export const IMPORTANT_VALUES = ["TRUE", "FALSE"];
 
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const FOOTER_PATTERN =
-  /\*\*LEVEL\*\*:[ \t]*(\S*)[ \t]*\r?\n[ \t]*\*\*DATE\*\*:[ \t]*(\S*)[ \t]*(?:\r?\n[ \t]*\*\*IMPORTANT\*\*:[ \t]*(\S*)[ \t]*)?$/;
+  /\*\*LEVEL\*\*:[ \t]*(\S*)[ \t]*\r?\n[ \t]*\*\*DATE\*\*:[ \t]*(\S*)[ \t]*(?:\r?\n[ \t]*\*\*CHAPTER\*\*:[ \t]*([^\r\n]*?)[ \t]*)?(?:\r?\n[ \t]*\*\*IMPORTANT\*\*:[ \t]*(\S*)[ \t]*)?$/;
 
 const pad = (number, length = 2) => String(number).padStart(length, "0");
 
@@ -115,11 +115,24 @@ export function parseEntry(entry, index = 0) {
     answerMatch.index > footerMatch.index
   ) {
     throw new Error(
-      `Card with index ${index} must contain **QUESTION**, **ANSWER**, **LEVEL** and **DATE** in that order, with **LEVEL** and **DATE** on separate lines at the end, optionally followed by an **IMPORTANT** line.`,
+      `Card with index ${index} must contain **QUESTION**, **ANSWER**, **LEVEL** and **DATE** in that order, with **LEVEL** and **DATE** on separate lines at the end, optionally followed by a **CHAPTER** line and then an **IMPORTANT** line.`,
     );
   }
 
-  const [, levelString, dateString, important = "FALSE"] = footerMatch;
+  const [, levelString, dateString, chapter = null, important = "FALSE"] =
+    footerMatch;
+
+  if (chapter === null && /\*\*CHAPTER\*\*:/.test(entry)) {
+    throw new Error(
+      `Card with index ${index} has a **CHAPTER** line in the wrong place. Put it on the line after **DATE** (and before **IMPORTANT**, if the card has one).`,
+    );
+  }
+
+  if (chapter === "") {
+    throw new Error(
+      `Card with index ${index} has an empty **CHAPTER**. Give it a value, e.g. **CHAPTER**: 3.14, or delete the line.`,
+    );
+  }
 
   if (/\*\*IMPORTANCE\*\*:/.test(entry)) {
     throw new Error(
@@ -157,6 +170,7 @@ export function parseEntry(entry, index = 0) {
   return {
     question,
     answer,
+    chapter,
     important: important === "TRUE",
     level,
     date: dateString,
@@ -168,9 +182,23 @@ export function parseCards(text) {
   return splitEntries(text).map(parseEntry);
 }
 
+// A chapter filter of "3" matches chapters "3", "3.1" and "3.14", but not "31".
+// An empty filter matches every card.
+export function inChapter({ chapter }, filter) {
+  if (!filter) {
+    return true;
+  }
+
+  return (
+    chapter !== null && (chapter === filter || chapter.startsWith(`${filter}.`))
+  );
+}
+
 export function withLevelAndDate(entry, { level, date }) {
   const footerMatch = FOOTER_PATTERN.exec(entry);
+  const chapterLine =
+    footerMatch[3] === undefined ? "" : `\n**CHAPTER**: ${footerMatch[3]}`;
   const importantLine =
-    footerMatch[3] === undefined ? "" : `\n**IMPORTANT**: ${footerMatch[3]}`;
-  return `${entry.slice(0, footerMatch.index)}**LEVEL**: ${level}\n**DATE**: ${date}${importantLine}`;
+    footerMatch[4] === undefined ? "" : `\n**IMPORTANT**: ${footerMatch[4]}`;
+  return `${entry.slice(0, footerMatch.index)}**LEVEL**: ${level}\n**DATE**: ${date}${chapterLine}${importantLine}`;
 }

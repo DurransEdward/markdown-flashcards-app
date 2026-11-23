@@ -1,4 +1,4 @@
-import { parseCards, isDue, MAX_LEVEL } from './cards.mjs'
+import { parseCards, isDue, inChapter, MAX_LEVEL } from './cards.mjs'
 import { createMarkdownRenderer, escapeHtml } from './markdown.mjs'
 import { setupAudio, autoplayFirst, stopAudio } from './audio.js'
 
@@ -39,6 +39,12 @@ function showLevel(level) {
 
 function showImportant(important) {
     document.getElementById('important-badge').hidden = !important
+}
+
+function showChapter(chapter) {
+    const badge = document.getElementById('chapter-badge')
+    badge.textContent = chapter === null ? '' : "Chapter: " + chapter
+    badge.hidden = chapter === null
 }
 
 function showCardsRemaining() {
@@ -89,11 +95,20 @@ async function loadDeckFromInput() {
         throw new Error("No cards found in the file.")
     }
 
-    cards = allCards.filter(card => isDue(card))
+    const chapter = document.getElementById('chapter-input').value.trim()
+    const chapterCards = allCards.filter(card => inChapter(card, chapter))
+
+    if (chapterCards.length === 0) {
+        alert(`No cards found in chapter "${chapter}".`)
+        throw new Error(`No cards found in chapter "${chapter}".`)
+    }
+
+    cards = chapterCards.filter(card => isDue(card))
 
     if (cards.length === 0) {
-        alert("No cards are due today.")
-        throw new Error("No cards are due today.")
+        const message = chapter ? `No cards in chapter "${chapter}" are due today.` : "No cards are due today."
+        alert(message)
+        throw new Error(message)
     }
 
     document.getElementById('answer-input').style.visibility = 'visible'
@@ -109,6 +124,7 @@ async function showNextCard() {
     }
 
     showImportant(cards[currentCardIndex].important)
+    showChapter(cards[currentCardIndex].chapter)
     showLevel(cards[currentCardIndex].level)
     showCardsRemaining()
 
@@ -143,6 +159,7 @@ async function revealAnswer() {
 function finishedQuiz() {
     document.getElementById('header').textContent = "Finished Quiz!"
     document.getElementById('important-badge').hidden = true
+    document.getElementById('chapter-badge').hidden = true
     document.getElementById('level-badge').hidden = true
     document.getElementById('cards-remaining').hidden = true
     document.getElementById('question-text').innerHTML = ''

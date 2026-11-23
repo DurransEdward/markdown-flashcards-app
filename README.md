@@ -76,7 +76,22 @@ Days are calendar days in your local time, so a card answered correctly yesterda
 **DATE**: NA
 ```
 
-To mark a card as important, add `**IMPORTANT**: TRUE` on the line directly below `**DATE**`, as in the first card above. Important cards show a ⚠️IMPORTANT⚠️ badge next to their level while you study. The line is optional: leave it out, or write `**IMPORTANT**: FALSE`, for an ordinary card. You set it yourself; the app never changes it.
+To mark a card as important, add `**IMPORTANT**: TRUE` on the line directly below `**DATE**` (or below `**CHAPTER**`, if the card has one), as in the first card above. Important cards show a ⚠️IMPORTANT⚠️ badge next to their level while you study. The line is optional: leave it out, or write `**IMPORTANT**: FALSE`, for an ordinary card. You set it yourself; the app never changes it.
+
+## Chapters
+
+To group cards by chapter, add a `**CHAPTER**` line directly below `**DATE**` and above any `**IMPORTANT**` line:
+
+```markdown
+**LEVEL**: 0
+**DATE**: NA
+**CHAPTER**: 3.14
+**IMPORTANT**: TRUE
+```
+
+The chapter can be any text, such as `1`, `3.14` or `Appendix A`. Cards with a chapter show a "Chapter: …" badge next to their level while you study. The line is optional, and the app never changes it.
+
+To study a single chapter, type it into the "Chapter (optional)" box before clicking "Load Deck". A chapter also includes its sub-chapters, so `3` loads cards in chapters `3`, `3.1` and `3.14`, but not `31`. Leave the box empty to study the whole deck.
 
 ## Audio Clips
 

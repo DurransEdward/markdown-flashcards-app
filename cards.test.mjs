@@ -9,6 +9,7 @@ import {
   splitEntries,
   joinEntries,
   todayString,
+  inChapter,
 } from "./cards.mjs";
 
 test("level 0 cards are always due", () => {
@@ -99,6 +100,7 @@ test("parses questions, answers, level, date and the optional important flag", (
   assert.deepEqual(cards[0], {
     question: "What is 1 + 1?",
     answer: "```python\nprint(1 + 1)\n```",
+    chapter: null,
     important: true,
     level: 2,
     date: "2025-03-10",
@@ -107,6 +109,7 @@ test("parses questions, answers, level, date and the optional important flag", (
   assert.deepEqual(cards[1], {
     question: "Second?",
     answer: "Yes.",
+    chapter: null,
     important: false,
     level: 0,
     date: "NA",
@@ -192,6 +195,7 @@ test("rewriting a card only changes its level and date", () => {
   assert.deepEqual(cards[1], {
     question: "Second?",
     answer: "Yes.",
+    chapter: null,
     important: false,
     level: 0,
     date: "NA",
@@ -209,4 +213,69 @@ test("the bundled example deck parses with every card due", async () => {
   );
   assert.equal(cards.length, 6);
   assert.ok(cards.every((card) => isDue(card)));
+});
+
+test("parses an optional chapter between DATE and IMPORTANT", () => {
+  const withImportant = parseEntry(
+    "**QUESTION**: q\n\n**ANSWER**: a\n\n**LEVEL**: 0\n**DATE**: NA\n**CHAPTER**: 3.14\n**IMPORTANT**: TRUE",
+  );
+  assert.equal(withImportant.chapter, "3.14");
+  assert.equal(withImportant.important, true);
+  assert.equal(withImportant.answer, "a");
+
+  const withoutImportant = parseEntry(
+    "**QUESTION**: q\n\n**ANSWER**: a\n\n**LEVEL**: 0\n**DATE**: NA\n**CHAPTER**: 1  ",
+  );
+  assert.equal(withoutImportant.chapter, "1");
+  assert.equal(withoutImportant.important, false);
+
+  const freeText = parseEntry(
+    "**QUESTION**: q\n\n**ANSWER**: a\n\n**LEVEL**: 0\n**DATE**: NA\n**CHAPTER**: Appendix A",
+  );
+  assert.equal(freeText.chapter, "Appendix A");
+});
+
+test("rejects a misplaced or empty chapter", () => {
+  assert.throws(
+    () =>
+      parseEntry(
+        "**QUESTION**: q\n\n**ANSWER**: a\n\n**LEVEL**: 0\n**DATE**: NA\n**CHAPTER**:",
+      ),
+    /empty \*\*CHAPTER\*\*/,
+  );
+  assert.throws(
+    () =>
+      parseEntry(
+        "**QUESTION**: q\n\n**ANSWER**: a\n\n**LEVEL**: 0\n**DATE**: NA\n**IMPORTANT**: TRUE\n**CHAPTER**: 1",
+      ),
+    /optionally followed by a \*\*CHAPTER\*\* line/,
+  );
+  assert.throws(
+    () =>
+      parseEntry(
+        "**CHAPTER**: 1\n\n**QUESTION**: q\n\n**ANSWER**: a\n\n**LEVEL**: 0\n**DATE**: NA",
+      ),
+    /\*\*CHAPTER\*\* line in the wrong place/,
+  );
+});
+
+test("rewriting a card keeps its chapter and important lines", () => {
+  const entry =
+    "**QUESTION**: q\n\n**ANSWER**: a\n\n**LEVEL**: 1\n**DATE**: 2025-03-10\n**CHAPTER**: 3.14\n**IMPORTANT**: TRUE";
+  assert.equal(
+    withLevelAndDate(entry, { level: 2, date: "2025-03-11" }),
+    "**QUESTION**: q\n\n**ANSWER**: a\n\n**LEVEL**: 2\n**DATE**: 2025-03-11\n**CHAPTER**: 3.14\n**IMPORTANT**: TRUE",
+  );
+});
+
+test("a chapter filter matches the chapter and its sub-chapters", () => {
+  assert.equal(inChapter({ chapter: "3" }, "3"), true);
+  assert.equal(inChapter({ chapter: "3.14" }, "3"), true);
+  assert.equal(inChapter({ chapter: "3.14" }, "3.14"), true);
+  assert.equal(inChapter({ chapter: "31" }, "3"), false);
+  assert.equal(inChapter({ chapter: "3" }, "3.14"), false);
+  assert.equal(inChapter({ chapter: null }, "3"), false);
+  assert.equal(inChapter({ chapter: "Appendix A" }, "Appendix A"), true);
+  assert.equal(inChapter({ chapter: null }, ""), true);
+  assert.equal(inChapter({ chapter: "2" }, ""), true);
 });

@@ -28,6 +28,7 @@ body {
 
 #level-badge,
 #important-badge,
+#chapter-badge,
 #cards-remaining {
   padding: 4px 12px;
   background-color: #ced4da;
@@ -46,6 +47,12 @@ body {
   right: 10px;
   display: flex;
   gap: 6px;
+}
+
+#chapter-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
 }
 
 #important-badge {
@@ -159,6 +166,12 @@ body {
 #file-input {
   box-sizing: border-box;
   flex: 1;
+  min-width: 0;
+}
+
+#chapter-input {
+  box-sizing: border-box;
+  flex: 0 0 240px;
   min-width: 0;
 }
 
